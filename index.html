@@ -53,10 +53,11 @@
         <div id="etat-marches" class="bandeau">Chargement…</div>
         <div class="tableau"><table id="table-marches" hidden>
           <thead><tr>
-            <th>Symbole</th><th class="nombre">Dernier cours</th><th>Date</th><th class="nombre">Dividendes</th>
+            <th>Symbole</th><th class="nombre">Dernier cours</th><th>Date</th>
           </tr></thead>
           <tbody></tbody>
         </table></div>
+        <p id="taux-marches" class="discret note"></p>
       </section>
       <section class="carte">
         <h2>Tableau de bord</h2>
@@ -100,6 +101,7 @@
 
   <!-- Données de marché (window.MARCHES), puis le coffre chiffré et l'application. -->
   <script src="donnees/marches.js"></script>
+  <script src="js/marches.js"></script>
   <script src="js/coffre.js"></script>
   <script src="js/app.js"></script>
 </body>

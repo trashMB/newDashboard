@@ -68,37 +68,38 @@
     afficherEcran("ecran-code");
   }
 
-  // Affiche le résumé des données de marché (étape 1) ; sera remplacé par le tableau de bord.
+  // Affiche le résumé des données de marché en euros (étape 1) ; sera remplacé par le tableau de bord.
   function afficherMarches() {
     const etat = $("etat-marches");
-    const marches = window.MARCHES;
-    if (!marches) {
+    if (!Marches.disponibles()) {
       etat.className = "bandeau alerte";
       etat.textContent = "Données de marché indisponibles.";
       return;
     }
-    const miseAJour = new Date(marches.miseAJour);
+    const miseAJour = new Date(Marches.miseAJour());
     const ancien = (Date.now() - miseAJour) / 86400000 > 3;
     const heure = miseAJour.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     etat.className = "bandeau " + (ancien ? "alerte" : "ok");
-    etat.textContent = `Données du ${dateFr(marches.miseAJour)} à ${heure}` + (ancien ? " : plus de 3 jours." : " : à jour.");
+    etat.textContent = `Données du ${dateFr(Marches.miseAJour())} à ${heure}` + (ancien ? " : plus de 3 jours." : " : à jour.");
 
+    // Une ligne par action : cours en euros, avec le cours d'origine en dollars en petit dessous.
     const corps = document.querySelector("#table-marches tbody");
     corps.replaceChildren();
-    const lignes = Object.entries(marches.actions).map(([symbole, contenu]) => {
-      const [jour, cours] = contenu.cours.at(-1);
-      return [symbole, nombre(cours, 2) + " $", dateFr(jour), nombre(contenu.dividendes.length, 0)];
-    });
-    const [jourTaux, taux] = marches.eurusd.at(-1);
-    lignes.push(["EUR/USD", nombre(taux, 4), dateFr(jourTaux), "—"]);
-    for (const valeurs of lignes) {
+    for (const symbole of Marches.symboles()) {
+      const cours = Marches.dernierCours(symbole);
       const ligne = corps.insertRow();
-      valeurs.forEach((valeur, i) => {
-        const cellule = ligne.insertCell();
-        cellule.textContent = valeur;
-        if (i === 1 || i === 3) cellule.className = "nombre";
-      });
+      ligne.insertCell().textContent = symbole;
+      const cellule = ligne.insertCell();
+      cellule.className = "nombre";
+      cellule.append(nombre(cours.eur, 2) + " €");
+      const dollars = document.createElement("small");
+      dollars.className = "discret secondaire";
+      dollars.textContent = nombre(cours.usd, 2) + " $";
+      cellule.append(dollars);
+      ligne.insertCell().textContent = dateFr(cours.date);
     }
+    $("taux-marches").textContent =
+      `Conversion au taux EUR/USD du jour de chaque cours. Dernier taux : 1 € = ${nombre(Marches.taux(), 4)} $ (${dateFr(Marches.dateDernierTaux())}).`;
     $("table-marches").hidden = false;
   }
 

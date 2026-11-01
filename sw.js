@@ -1,11 +1,12 @@
 // Service worker : garde une copie des fichiers pour ouvrir l'application sans connexion (EX-DON-08).
 // Stratégie « réseau d'abord » : en ligne, on prend toujours la version la plus récente et on met la copie à jour ;
 // hors ligne, on sert la dernière copie.
-const CACHE = "portefeuille-v1";
+const CACHE = "portefeuille-v2";
 const FICHIERS = [
   "./",
   "index.html",
   "css/style.css",
+  "js/marches.js",
   "js/coffre.js",
   "js/app.js",
   "donnees/marches.js",

@@ -85,6 +85,8 @@ button.lien { background: none; border: none; color: var(--accent); padding: 8px
 table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
 th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--ligne); white-space: nowrap; }
 .nombre { text-align: right; }
+.secondaire { display: block; font-size: 0.8rem; }
+.note { font-size: 0.85rem; margin: 12px 0 0; }
 
 /* Fenêtre de confirmation */
 dialog { border: 1px solid var(--ligne); border-radius: 12px; background: var(--carte); color: var(--texte); max-width: min(380px, calc(100vw - 32px)); padding: 16px; }
