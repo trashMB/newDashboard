@@ -15,7 +15,12 @@ Ce guide est écrit pour être suivi sans connaissances en développement et **s
 
 | Fichier ou dossier | Rôle |
 | --- | --- |
-| `index.html` | La page de l'application (pour l'instant : page de vérification des données) |
+| `index.html` | La page de l'application (écrans : création du code, saisie du code, accueil, paramètres) |
+| `css/style.css` | L'apparence (couleurs, tailles, adaptation téléphone / PC, mode sombre) |
+| `js/coffre.js` | Le coffre chiffré : enregistre vos données sur l'appareil, protégées par votre code |
+| `js/app.js` | Le fonctionnement des écrans : code, verrouillage automatique, paramètres |
+| `manifest.webmanifest`, `icones/` | Nom et icône de l'application, pour l'installer sur Android |
+| `sw.js` | Garde une copie de l'application pour l'ouvrir sans connexion |
 | `donnees/marches.json` et `donnees/marches.js` | Données de marché, écrites par le robot. Ne pas modifier à la main |
 | `scripts/recuperer_donnees.py` | Le programme du robot qui interroge Yahoo Finance |
 | `.github/workflows/publier.yml` | Le « mode d'emploi » du robot : quand il se lance et ce qu'il fait |
@@ -76,4 +81,49 @@ En haut de la page, choisissez une largeur de 360 (téléphone) ou un modèle de
 | EX-DON-06 | Le fichier ne contient que des cours, dividendes, divisions, taux et la date de mise à jour | |
 
 **Remarque :** Yahoo Finance ne fournit pas la **date de paiement** des dividendes, seulement la date de détachement.
-Une modification d'EX-DON-03 est proposée dans le cahier des charges.
+Décision PO-8 : la date de détachement est utilisée par défaut, et la date de paiement réelle pourra être saisie (étape 5).
+
+---
+
+## Étape 2 — Code, verrouillage et installation sur Android
+
+### Installer l'application sur le téléphone ou la tablette
+
+1. Ouvrez **Chrome** et allez à **https://trashmb.github.io/newDashboard/**
+2. Touchez le menu **⋮** (trois points, en haut à droite).
+3. Touchez **Ajouter à l'écran d'accueil**, puis **Installer** (ou **Ajouter**).
+4. L'icône bleue « Portefeuille » apparaît sur l'écran d'accueil. Lancez l'application depuis cette icône :
+   elle s'ouvre en plein écran, sans barre d'adresse.
+
+Les mises à jour sont automatiques : à chaque ouverture avec une connexion, l'application prend la dernière version.
+
+### Premier lancement
+
+Choisissez un code de 6 chiffres et **notez-le en lieu sûr** : sans lui, vos données sont perdues (il n'existe aucun moyen de les récupérer).
+Chaque appareil (PC, téléphone, tablette) a son propre code et ses propres données ; le transfert entre appareils arrive à l'étape 7.
+
+**Ce que protège le code :** il empêche une personne qui prend votre téléphone déverrouillé d'ouvrir l'application,
+et il chiffre les données enregistrées. Un code à 6 chiffres ne résisterait pas à un spécialiste qui copierait les fichiers
+de l'appareil et testerait tous les codes possibles : gardez aussi un verrouillage d'écran sur vos appareils.
+
+### Exigences à vérifier
+
+| Exigence | Comment vérifier | OK ? |
+| --- | --- | --- |
+| EX-SEC-01 | Premier lancement : seul l'écran « Bienvenue » est affiché | |
+| EX-SEC-02 | Codes « 12345 » et « 12a456 » refusés ; « 123456 » accepté | |
+| EX-SEC-03 | Deux codes différents à la création : refusés | |
+| EX-SEC-04 | Fermer puis rouvrir l'application : le code est demandé avant tout affichage | |
+| EX-SEC-05 | Code faux : message « Code incorrect » | |
+| EX-SEC-06 | Inspection de `js/coffre.js` (AES-GCM 256 bits, PBKDF2-SHA-256, 600 000 itérations) | |
+| EX-SEC-07 | Ne plus toucher l'écran pendant 5 minutes : l'écran du code réapparaît | |
+| EX-SEC-08 | Paramètres → Changer le code avec un code actuel faux : refusé | |
+| EX-SEC-09 | Changer le code, verrouiller, rouvrir avec le nouveau code : fonctionne | |
+| EX-SEC-10 | Paramètres → Réinitialiser → taper EFFACER → retour à « Bienvenue » | |
+| EX-SEC-11 | Inspection : aucune fonction de récupération dans le code | |
+| EX-NF-04 | Téléphone (ou PC en simulation 360 px) : aucun défilement horizontal de la page | |
+| EX-NF-05 | PC en plein écran (1920 px) : aucun défilement horizontal | |
+| EX-NF-06 | L'icône apparaît sur l'écran d'accueil Android | |
+| EX-NF-07 | Lancée depuis l'icône, l'application n'a pas de barre d'adresse | |
+| EX-NF-11 | Fichiers téléchargés (Partie 4, option B) : double-clic sur `index.html`, tout fonctionne | |
+| EX-NF-12 | PC : F12 puis Ctrl + Maj + M, largeur 360 : affichage téléphone | |
