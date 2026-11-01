@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mon portefeuille — vérification des données</title>
+  <style>
+    /* Page provisoire de l'étape 1 : elle sera remplacée par l'application à l'étape 2. */
+    :root { --fond: #f7f7f5; --texte: #1f1f1f; --discret: #666; --ligne: #ddd; --alerte: #b3261e; --ok: #1e7b34; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fond: #1b1b1b; --texte: #eee; --discret: #aaa; --ligne: #3a3a3a; --alerte: #ff8a80; --ok: #81c995; }
+    }
+    body { margin: 0; padding: 16px; font-family: system-ui, sans-serif; background: var(--fond); color: var(--texte); }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    p { margin: 4px 0 12px; color: var(--discret); }
+    .bandeau { padding: 10px 12px; border-radius: 8px; border: 1px solid currentColor; margin-bottom: 12px; }
+    .alerte { color: var(--alerte); }
+    .ok { color: var(--ok); }
+    .tableau { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--ligne); white-space: nowrap; }
+    td.nombre, th.nombre { text-align: right; }
+  </style>
+</head>
+<body>
+  <h1>Vérification des données de marché</h1>
+  <p>Étape 1 : cette page affiche ce que le robot a récupéré sur Yahoo Finance.</p>
+  <div id="etat" class="bandeau">Chargement…</div>
+  <div class="tableau"><table id="resultats" hidden>
+    <thead><tr>
+      <th>Symbole</th><th class="nombre">Dernier cours</th><th>Date</th>
+      <th class="nombre">Cotations</th><th class="nombre">Dividendes</th><th class="nombre">Divisions</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table></div>
+
+  <!-- marches.js définit window.MARCHES ; il fonctionne aussi en ouvrant cette page depuis le disque. -->
+  <script src="donnees/marches.js"></script>
+  <script>
+    // Formats français (EX-NF-15, EX-NF-16).
+    const nombre = (v, decimales) => v.toLocaleString("fr-FR", { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+    const date = iso => iso.slice(0, 10).split("-").reverse().join("/");
+
+    // Ajoute une ligne au tableau à partir d'une liste de cellules [texte, aligné à droite ?].
+    function ajouterLigne(cellules) {
+      const ligne = document.querySelector("#resultats tbody").insertRow();
+      for (const [texte, aDroite] of cellules) {
+        const cellule = ligne.insertCell();
+        cellule.textContent = texte;
+        if (aDroite) cellule.className = "nombre";
+      }
+    }
+
+    const etat = document.getElementById("etat");
+    const marches = window.MARCHES;
+    if (!marches) {
+      etat.className = "bandeau alerte";
+      etat.textContent = "Aucune donnée : le robot n'a pas encore tourné (voir LISEZMOI.md, partie 2).";
+    } else {
+      const miseAJour = new Date(marches.miseAJour);
+      const ageJours = (Date.now() - miseAJour) / 86400000;
+      const heure = miseAJour.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      // Alerte si les données ont plus de 3 jours (aperçu d'EX-DON-07).
+      etat.className = "bandeau " + (ageJours > 3 ? "alerte" : "ok");
+      etat.textContent = `Données du ${date(marches.miseAJour)} à ${heure}` + (ageJours > 3 ? " : plus de 3 jours, vérifier le robot." : " : à jour.");
+
+      for (const [symbole, contenu] of Object.entries(marches.actions)) {
+        const [jour, cours] = contenu.cours.at(-1);
+        ajouterLigne([[symbole], [nombre(cours, 2) + " $", true], [date(jour)],
+          [nombre(contenu.cours.length, 0), true], [nombre(contenu.dividendes.length, 0), true], [nombre(contenu.divisions.length, 0), true]]);
+      }
+      const [jourTaux, taux] = marches.eurusd.at(-1);
+      ajouterLigne([["EUR/USD"], [nombre(taux, 4), true], [date(jourTaux)], [nombre(marches.eurusd.length, 0), true], ["—", true], ["—", true]]);
+      document.getElementById("resultats").hidden = false;
+    }
+  </script>
+</body>
+</html>

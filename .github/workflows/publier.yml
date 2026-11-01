@@ -1,0 +1,70 @@
+# Robot de l'application : récupère les données de marché puis publie le site sur GitHub Pages.
+# Il se lance :
+#  - chaque jour du lundi au vendredi à 22:30 UTC, après la clôture de Wall Street (EX-DON-01) ;
+#  - à chaque envoi de code sur la branche main ;
+#  - à la demande, depuis l'onglet Actions (bouton « Run workflow »).
+name: Données et publication
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Une seule exécution à la fois, pour éviter deux envois simultanés de données.
+concurrency:
+  group: publier
+  cancel-in-progress: false
+
+jobs:
+  donnees:
+    name: Récupérer les données Yahoo Finance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Installer les bibliothèques
+        run: pip install -r scripts/requirements.txt
+      - name: Tester le script
+        run: python -m unittest discover -s tests
+      - name: Récupérer les données
+        run: python scripts/recuperer_donnees.py
+      - name: Enregistrer les données dans le dépôt
+        run: |
+          git config user.name "robot-donnees"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add donnees
+          if git diff --cached --quiet; then
+            echo "Données inchangées, rien à enregistrer."
+          else
+            git commit -m "Données de marché du $(date -u +%d/%m/%Y)"
+            git push
+          fi
+
+  publication:
+    name: Publier le site
+    needs: donnees
+    # Publie même si Yahoo a échoué : le site garde alors les données de la veille.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploiement
+        uses: actions/deploy-pages@v4

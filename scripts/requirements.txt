@@ -1,0 +1,4 @@
+# Bibliothèques Python installées par le robot GitHub Actions (rien à installer sur votre PC).
+# yfinance n'est volontairement pas figé : Yahoo change souvent son interface
+# et les nouvelles versions de yfinance suivent ces changements.
+yfinance
